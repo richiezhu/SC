@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  sc.web:
+    image: sc.web
+    build:
+      context: ./SC.Web
+      dockerfile: Dockerfile

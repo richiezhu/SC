@@ -1,0 +1,8 @@
+﻿@media (min-width: 768px) {
+    .form-inline .form-control {
+        display: inline-block;
+        width: auto;
+        vertical-align: middle;
+    }
+}
+.top10 {margin-top:10px;}

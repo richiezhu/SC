@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Index</h2>
+
+@*asp-area="Camera" asp-controller="UploadFiles" asp-action="iframe"*@
+
+<script type="text/javascript">
+    function iframeopen() {
+        $('#ss').attr("src", '@Url.Action("iframe", "UploadFiles",new {Area= "Camera" })');
+    }
+    function iframeclose()
+    {
+        $('#ss').attr("src", '');
+    }
+</script>
+<button onclick="iframeopen()" class="btn btn-primary">open iframe</button>
+<button onclick="iframeclose()" class="btn btn-primary">Close iframe</button>
+<iframe id="ss" style="width:576px;height:538px; border:1px solid red; padding:0; overflow:hidden;" frameborder="0"></iframe>

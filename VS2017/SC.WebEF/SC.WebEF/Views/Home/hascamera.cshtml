@@ -1,0 +1,18 @@
+﻿
+@{
+    ViewBag.Title = "hascamera";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>hascamera</h2>
+<script type="text/javascript">
+    window.onload = function () {
+        if (navigator.getUserMedia) {
+            alert("你的浏览器支持调用摄像头。getUserMedia");
+        } else if (navigator.webkitGetUserMedia) {
+            alert("你的浏览器支持调用摄像头。webkitGetUserMedia");
+        } else {
+            alert("你的浏览器不支持调用摄像头。");
+        }
+    }
+</script>

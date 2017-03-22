@@ -1,0 +1,206 @@
+﻿@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+<link rel="stylesheet" href="~/css/site.css" />
+
+<script src="~/lib/jquery/dist/jquery.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+
+<style type="text/css">
+    body{padding:0; margin:0; overflow:hidden;}
+</style>
+
+<script type="text/javascript">
+    var camera = {
+        uploadAction: '@Url.Action("upload")',
+        video: null,
+        uploadfilebuttonid: 'camera_uploadfile',
+        videoid: 'videoid',
+        filenameid: 'filename',
+        canvasid: 'canvasid',
+        snapid: 'camera_snap',//SnapID;
+        cancelid: 'camera_cancel',
+        filename_wrap: 'filename_wrap',
+        context: null,
+        filename: '',
+        filename_ext: '.png',
+        cameraSize: { width: 1024, height: 768 },
+        videoObj: { "video": true },
+        errBack: function (error) {
+            console.log("Video capture error: ", error.code);
+        },
+        //这段代 主要是获取摄像头的视频流并显示在Video 签中
+        Create: function () {
+            window.addEventListener("DOMContentLoaded", function () {
+                var canvas_o = document.getElementById(camera.canvasid);
+                canvas_o.width = camera.cameraSize.width;
+                canvas_o.height = camera.cameraSize.height;
+
+                camera.context = canvas_o.getContext("2d"); //2d绘图
+
+                camera.play();//打开摄像头。
+            }, false);
+        },
+        play: function () {
+            var video = document.getElementById(camera.videoid);
+            //navigator.getUserMedia这个写法在Opera中好像是navigator.getUserMedianow
+            if (navigator.getUserMedia) {
+                navigator.getUserMedia(camera.videoObj, function (stream) {
+                    video.src = stream;
+                    video.play();
+                    camera.ini_events();
+                }, camera.errBack);
+            } else if (navigator.webkitGetUserMedia) {
+                navigator.webkitGetUserMedia(camera.videoObj, function (stream) {
+                    video.src = window.webkitURL.createObjectURL(stream);
+                    video.play();
+                    camera.ini_events();
+                }, camera.errBack);
+            }
+        },
+        cancel: function () {//cancel
+            var video = document.getElementById(camera.videoid);
+            video.play();
+
+            $('#' + camera.cancelid).hide();
+            $('#' + camera.filename_wrap).hide();
+            $("#" + camera.uploadfilebuttonid).hide();
+        },
+        ini_events: function () {
+            $("#" + camera.snapid).click(camera.snap_event); //绑定点击拍照事件.
+            $("#" + camera.cancelid).click(camera.cancel); //绑定点击拍照事件.
+
+            $("#resolution").change(camera.cameraSize_event); //绑定点击拍照事件.
+
+            $("#" + camera.uploadfilebuttonid).click(camera.uploadfile_event); //绑定点击拍照事件.
+        },
+        snap_event: function () { //拍照事件
+            var video = document.getElementById(camera.videoid);
+            camera.context.drawImage(video, 0, 0, camera.cameraSize.width, camera.cameraSize.height);
+            video.pause();
+
+            camera.filename = datetimeformat(new Date(), 'yyMMddhhmmss');
+            $('#' + camera.cancelid).show();
+            $("#" + camera.uploadfilebuttonid).show();
+            $('#' + camera.filename_wrap).show();
+            $('#' + camera.filenameid).val(camera.filename);
+        },
+        uploadfile_event: function () {
+            //上传服务器
+            var canvans = document.getElementById(camera.canvasid);
+            //获取浏览器页面的画布对象
+            //以下开始编 数据
+            var imgData = canvans.toDataURL("image/jpeg", 1.0);
+            //将图像转换为base64数据
+            var base64Data = imgData.substr(22);
+            //在前端截取22位之后的字符串作为图像数据
+            //开始异步上
+
+            var blob = camera.dataURItoBlob(base64Data); // 上一步中的函数
+            var form_data = new FormData();  
+            form_data.append("imgfile", blob);
+            form_data.append("fname", camera.filename + camera.filename_ext);
+
+            $.ajax({
+                type: "POST",
+                url: camera.uploadAction,
+                data: form_data,
+                dataType: 'json',
+                processData: false, // 必须
+                contentType: false, // 必须
+                beforeSend: function () {
+                },
+                success: function (data) {
+                    if (!isUndefined(data) && data != null) {
+                        if (data.result) {
+                            alert('ok');
+                        }
+                        else {
+                            alert('else');
+                        }
+                    }
+                },
+                error: function () {
+                    alert('Error!');
+                }
+            });
+            camera.cancel();
+
+        },
+        cameraSize_event: function () {
+            var val = $(this).val();
+            if (val == 2) {
+                camera.cameraSize = { width: 1280, height: 960 };
+            }
+            else {
+                camera.cameraSize = { width: 1024, height: 768 };
+            }
+
+            var canvas_o = document.getElementById(camera.canvasid);
+
+            canvas_o.width = camera.cameraSize.width;
+            canvas_o.height = camera.cameraSize.height;
+        },
+        dataURItoBlob: function (base64Data) {
+            var byteString;
+            if (base64Data.split(',')[0].indexOf('base64') >= 0)
+                byteString = atob(base64Data.split(',')[1]);
+            else
+                byteString = unescape(base64Data.split(',')[1]);
+
+            var mimeString = base64Data.split(',')[0].split(':')[1].split(';')[0];
+            var ia = new Uint8Array(byteString.length);
+            for (var i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ia], { type: mimeString });
+
+            //var arr = base64Data.split(','), mime = arr[0].match(/:(.*?);/)[1];
+            //return new Blob([atob(arr[1])], { type: mime });
+
+        }
+    }
+
+    ////判断浏览器是否支持HTML5 Canvas
+    //window.onload = function () {
+    //};
+
+    try {
+        camera.Create();
+        //动态创建一个canvas元 ，并获取他2Dcontext。如果出现异常则表示不支持 document.createElement("canvas").getContext("2d");
+        // document.getElementById("support").innerHTML = "浏览器支持HTML5 CANVAS";
+    }
+    catch (e) {
+        // document.getElementByIdx("support").innerHTML = "浏览器不支持HTML5 CANVAS";
+    }
+
+</script>
+
+<div id="contentHolder" style="width:534px; height:500px; border:1px solid red;">
+    <div style="width:532px; height:399px; overflow:hidden;">
+        <video id="videoid" width="532" height="399" autoplay></video>
+        <canvas id="canvasid" width="1024" height="768" style="display:none;"></canvas>
+    </div>
+    <div class="form-inline top10">
+        <div>
+            <label>Size : </label>
+            <select style="width:auto;display:inline-block;" class="form-control" id="resolution">
+                <option value="1">1024 * 768</option>
+                <option value="2">1280 * 960</option>
+            </select>
+            <div class="pull-right">
+                <button id="camera_uploadfile" type="button" class="btn btn-primary" style="display:none"><i class="fa fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+    <div class="text-right top10">
+        <div id="filename_wrap" class="pull-left" style="display:none;">
+            <label>File Name : </label> <input type="text" value="" id="filename" name="filename" />
+        </div>
+
+        <input type="button" id="camera_cancel" style="width:100px; height:35px; display:none;" value="Cancel" class="btn btn-primary" />
+        <input type="button" id="camera_snap" style="width:100px; height:35px;" value="Snap" class="btn btn-primary" />
+    </div>
+</div>
